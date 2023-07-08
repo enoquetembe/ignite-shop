@@ -1,5 +1,5 @@
-"use client"
 import Image from "next/image"
+import Link from "next/link"
 import { GetStaticProps } from "next"
 import { useKeenSlider } from "keen-slider/react"
 import 'keen-slider/keen-slider.min.css'
@@ -33,19 +33,23 @@ export default function Home({ products }:  HomeProps) {
      {
       products.map(product => {
         return(
-          <Product
-            key={product.id} 
-            name={product.name} 
-            price={product.price}
-           >
-            <Image 
-              className='object-cover'
-              src={product.imageUrl} 
-              width={520} 
-              height={480} 
-              alt=""
-            />
-          </Product>
+          <Link 
+            key={product.id}
+            href={`/product/${product.id}`}
+          >
+            <Product
+              name={product.name} 
+              price={product.price}
+            >
+              <Image 
+                className='object-cover'
+                src={product.imageUrl} 
+                width={520} 
+                height={480} 
+                alt=""
+              />
+           </Product>
+          </Link>
         )
       })
      }
