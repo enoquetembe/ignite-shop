@@ -1,8 +1,22 @@
-import { useRouter } from "next/router"
+import { stripe } from "@/lib/stripe"
+import { GetStaticPaths, GetStaticProps } from "next"
 import Image from "next/image"
+import Stripe from "stripe"
 
-export default function Product() {
-  const { query } = useRouter()
+interface ProductProps {
+  product: {
+    id: string
+    name: string
+    imageUrl: string
+    price: string
+    description: string
+    defaultPriceId: string
+  }
+}
+
+
+export default function Product({ product }: ProductProps) {
+  
   return(
     <main 
       className='max-w-[1180px] mx-auto grid grid-cols-2 items-stretch gap-4
@@ -10,21 +24,24 @@ export default function Product() {
       <div 
         className='bg-gradient-to-b from-[#1ea483] to-[#7465d4] flex items-center
          w-full max-w-[576px] h-[calc(556px-0.5rem)] rounded-lg p-1'>
-
+          <Image 
+            className='object-cover'
+            src={product.imageUrl} 
+            width={520} 
+            height={480} 
+            alt=""
+          />
       </div>
 
       <div className='flex flex-col'>
         <h1 className='text-2xl text-gray-300 font-bold'>
-          T-shirt 1
+         {product.name}
         </h1>
         
-        <span className='block mt-4 text-2xl text-green-300'>100</span>
+        <span className='block mt-4 text-2xl text-green-300'>{product.price}</span>
 
         <p className='mt-10 text-md leading-6'>
-          Lorem ipsum dolor sit amet consectetur adipisicing elit. Doloribus 
-          velit quasi possimus quidem nulla dignissimos labore ratione iure, 
-          excepturi, provident temporibus tempore ipsa culpa maiores. Nam, 
-          doloribus optio. Facilis, labore?
+         {product.description}
         </p>
 
 
@@ -36,4 +53,40 @@ export default function Product() {
       </div>
     </main>
   )
+}
+
+export const getStaticPaths: GetStaticPaths = async () => {
+  return {
+    paths: [
+      { params: { id: 'prod_OCGKOLZYTE4opp' } },
+    ],
+    fallback: 'blocking',
+  }
+}
+
+export const getStaticProps: GetStaticProps = async ({ params }) => {
+  const productId = String(params?.id)
+
+  const product  = await stripe.products.retrieve(productId, {
+    expand: ['default_price'],
+  })
+
+  const price = product.default_price as Stripe.Price
+  
+  return {
+    props: {
+      product: {
+      id: product.id,
+      name: product.name,
+      imageUrl: product.images[0],
+      price: Intl.NumberFormat('en-us', {
+        style: 'currency',
+        currency: 'USD'
+      }).format(Number(price.unit_amount) / 100),
+      description: product.description,
+     }
+    },
+
+    revalidate: 60 * 60 * 2,
+  } 
 }
